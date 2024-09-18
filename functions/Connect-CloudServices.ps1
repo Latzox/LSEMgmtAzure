@@ -9,6 +9,9 @@ function Connect-CloudServices {
     .PARAMETER Service
     Selection of the cloud service.
 
+    .PARAMETER Update
+    Updates the specified service's module.
+
     .INPUTS
     None. You must provide values for the parameters explicitly.
 
@@ -16,112 +19,107 @@ function Connect-CloudServices {
     None. This function does not return output; it writes to a file or displays messages in the console.
 
     .EXAMPLE
-    Example usage of the function.
-    PS> Connect-CloudServices -Service "Azure"
+    Connect-CloudServices -Service "Azure"
 
     .NOTES
     Author: Marco Platzer
     Version: 1.0.0
     Date: 18-09-2024
 
-    .LINK
-    https://github.com/Latzox/LSEMgmtAzure
-
     #>
 
     [CmdletBinding()]
     Param (
         [Parameter(Mandatory = $true, Position = 0)]
-        [ValidateSet("Azure", "ExchangeOnlineManagement", "Microsoft.Graph", "Microsoft.Online.SharePoint.PowerShell", "MicrosoftTeams")]
+        [ValidateSet("Az", "ExchangeOnlineManagement", "Microsoft.Graph", "Microsoft.Online.SharePoint.PowerShell", "MicrosoftTeams")]
         [string]$Service,
 
         [Parameter(Mandatory = $false, Position = 1)]
-        [switch]$Initialize
+        [switch]$Update
     )
 
     Begin {
         Write-Verbose "Starting function execution..."
 
-        if ($Initialize) {
-            switch ($Service) {
-                Azure { 
-                    Write-Verbose "Azure selected."
-                    Write-Verbose "Checking module existance."
-    
-                    $module = Get-InstalledModule -Name "Az"
-    
-                    if ($module) {
-                        Write-Verbose "Module already installed. Checking version..."
-                        $latest = (Find-Module -Name Az).version
-    
-                        if ($module.version -lt $latest) {
-                            Write-Verbose "Updating module..."
-                            Update-Module -Name Az -Confirm:$false -Force
-                            Import-Module -Name Az
-                        }
-                        else {
-                            Write-Verbose "Module alredy up to date."
-                            Import-Module -Name Az
-                        }
-    
-                    }
-                    else {
-                        Write-Verbose "Module not installed. Installing..."
-                        Install-Module -Name Az -Confirm:$false -Force
-                    }
-                }
-                MS365 {
-                    Write-Verbose "MS365 selected."
-                    Write-Verbose "Checking module existance."
-    
-                    $module = Get-InstalledModule -Name ""
-    
-                    if ($module) {
-                        Write-Verbose "Module already installed. Trying to update."
-                        Update-Module -Name Az -Confirm:$false -Force
-                    }
-                    else {
-                        Write-Verbose "Module not installed. Installing..."
-                        Install-Module -Name Az -Confirm:$false -Force
-                    }
-                }
+        function Initialize-Module {
+            param (
+                [string]$ModuleName,
+                [switch]$Update
+            )
+        
+            $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
+            $loaded = Get-Module -Name $ModuleName -ListAvailable -ErrorAction SilentlyContinue
+        
+            if ($Update -and $module) {
+                Write-Verbose "Updating module $ModuleName..."
+                Update-Module -Name $ModuleName -Confirm:$false -Force
+            }
+            elseif (-not $module) {
+                Write-Verbose "Installing module $ModuleName..."
+                Install-Module -Name $ModuleName -Confirm:$false -Force
+            } else {
+                Write-Verbose "Module $ModuleName is already installed."
+            }
+        
+            if (-not $loaded) {
+                Write-Verbose "Importing module $ModuleName..."
+                Import-Module -Name $ModuleName -Force
+            } else {
+                Write-Verbose "Module $ModuleName is already loaded. Skipping import."
             }
         }
 
+        if ($Update) {
+            switch ($Service) {
+                Azure {
+                    Initialize-Module -ModuleName $Service -Update:$Update
+                }
+                ExchangeOnlineManagement {
+                    Initialize-Module -ModuleName $Service -Update:$Update
+                }
+                Microsoft.Graph {
+                    Initialize-Module -ModuleName $Service -Update:$Update
+                }
+                Microsoft.Online.SharePoint.PowerShell {
+                    Initialize-Module -ModuleName $Service -Update:$Update
+                }
+                MicrosoftTeams {
+                    Initialize-Module -ModuleName $Service -Update:$Update
+                } 
+            }
+        }
     }
 
     Process {
         try {
-            Write-Verbose "Processing the input parameters."
-
+            Write-Verbose "Processing the input parameters for service: $Service"
+    
             switch ($Service) {
                 Azure { 
-                    Connect-AzAccount
+                    Connect-AzAccount -ErrorAction Stop
                 }
                 ExchangeOnlineManagement {
-                    Connect-ExchangeOnline
+                    Connect-ExchangeOnline -ErrorAction Stop
                 }
                 Microsoft.Graph {
-                    Connect-MgGraph 
+                    Connect-MgGraph -ErrorAction Stop
                 }
                 Microsoft.Online.SharePoint.PowerShell {
-                    $url = Read-Host -Prompt "Enter the URL of your SharePoint Online Service (z.B. https://org-admin.sharepoint.com):"
-                    Connect-SPOService -Url $url
+                    $url = Read-Host -Prompt "Enter the URL of your SharePoint Online Service (e.g., https://org-admin.sharepoint.com):"
+                    Connect-SPOService -Url $url -ErrorAction Stop
                 }
                 MicrosoftTeams {
-                    Connect-MicrosoftTeams
+                    Connect-MicrosoftTeams -ErrorAction Stop
                 }
             }
-
+    
         }
         catch {
-            # Catch block for error handling
-            Write-Error "An error occurred connecting to ${Service}: $_"
+            Write-Error "Failed to connect to $Service. Error details: $_"
         }
     }
 
     End {
-        # Any cleanup code or final processing
         Write-Verbose "Function execution completed."
     }
 }
