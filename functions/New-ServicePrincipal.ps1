@@ -1,47 +1,58 @@
 function New-ServicePrincipal {
     <#
     .SYNOPSIS
-    A brief description of what the function does.
+    Creates a new Azure AD Service Principal and assigns the specified role.
 
     .DESCRIPTION
-    A detailed explanation of the function’s purpose and how it works.
+    This function creates a new Azure AD Service Principal with a specified role and scope.
+    It can also handle creating federated credentials for GitHub workflows or generating secrets.
 
-    .PARAMETER Param1
-    Description of the first parameter.
+    .PARAMETER Type
+    Specifies whether the service principal will use a secret or federated credentials.
 
-    .PARAMETER Param2
-    Description of the second parameter.
+    .PARAMETER DisplayName
+    The display name for the service principal.
+
+    .PARAMETER Role
+    The role to be assigned to the service principal.
+
+    .PARAMETER Scope
+    The scope of the role assignment for the service principal.
 
     .INPUTS
-    If applicable, describe the types of objects that can be piped into this function.
+    None. Parameters must be passed directly.
 
     .OUTPUTS
-    Describe the types of objects that the function returns.
+    Outputs a hashtable with client ID, subscription ID, tenant ID, and optionally client secret.
 
     .EXAMPLE
-    Example usage of the function with an explanation of what it does.
-    PS> Get-SampleFunction -Param1 "Value1" -Param2 "Value2"
+    PS> New-ServicePrincipal -Type "Secret" -DisplayName "MyApp" -Role "Contributor" -Scope "/subscriptions/XXXX"
 
     .NOTES
-    Additional information such as author, version, and any other notes.
+    Author: Marco Platzer
+    Version: 1.0.0
 
     .LINK
-    Link to documentation or related functions if applicable.
+    https://github.com/Latzox/LSEMgmtAzure
+
     #>
 
-    [CmdletBinding()] 
+    [CmdletBinding()]
     Param (
         [Parameter(Mandatory = $true, Position = 0)]
         [ValidateSet("Secret", "FederatedCredential")]
         [string]$Type,
 
         [Parameter(Mandatory = $true, Position = 1)]
+        [ValidateNotNullOrEmpty()]
         [string]$DisplayName,
 
         [Parameter(Mandatory = $true, Position = 2)]
+        [ValidateNotNullOrEmpty()]
         [string]$Role,
 
         [Parameter(Mandatory = $true, Position = 3)]
+        [ValidateNotNullOrEmpty()]
         [string]$Scope
     )
 
@@ -49,72 +60,62 @@ function New-ServicePrincipal {
         Write-Verbose "Starting function execution..."
         try {
             Write-Verbose "Checking Azure connection..."
-            Get-AzContext | Out-Null
+            Get-AzContext -ErrorAction Stop | Out-Null
         }
         catch {
-            Write-Error "Azure resources not available. Try execute Connect-CloudServices to establish a connection with your Azure account."
+            Write-Error "Azure resources not available. Please run Connect-CloudServices to establish a connection with your Azure account."
+            return
         }
     }
 
     Process {
+        Write-Verbose "Starting to process..."
         try {
-            Write-Verbose "Starting to process..."
-
-            Write-Verbose "Creating application and service principal with the role assignment..."
-            $sp = New-AzADServicePrincipal -DisplayName $DisplayName -Role $Role -Scope $Scope
+            Write-Verbose "Creating the Azure AD Service Principal..."
+            $servicePrincipal = New-AzADServicePrincipal -DisplayName $DisplayName -Role $Role -Scope $Scope -ErrorAction Stop
+            $application = Get-AzADApplication -ApplicationId $servicePrincipal.AppId -ErrorAction Stop
 
             switch ($Type) {
+                'FederatedCredential' {
+                    Write-Verbose "Creating federated credentials for GitHub workflows..."
+                    $org = Read-Host -Prompt "Enter the GitHub org name"
+                    $repo = Read-Host -Prompt "Enter the GitHub repo name"
+                    $env = Read-Host -Prompt "Enter the environment name (e.g. production, public)"
 
-                FederatedCredential {
-
-                    Write-Verbose "Getting additional parameters for the federated credentials..."
-                    $org = Read-Host -Prompt "Enter the GitHub org name where your workflow is running:"
-                    $repo = Read-Host -Prompt "Enter the GitHub repo name where your workflow is running:"
-                    $env = Read-Host -Prompt "Enter the environment name where your workflow is running (e.g. production, public):"
-
-                    Write-Verbose "Creating federated credentials for the github workflow..."
-
-                    $fedCreds = @{
-                        ApplicationObjectId = $sp.Id
+                    $federatedCredentialParams = @{
+                        ApplicationObjectId = $application.Id
                         Audience            = "api://AzureADTokenExchange"
                         Issuer              = "https://token.actions.githubusercontent.com/"
-                        Name                = "Federated Credentials for OIDC Authentication"
+                        Name                = "OIDC"
                         Subject             = "repo:$org/${repo}:environment:$env"
                     }
-                    New-AzADAppFederatedCredential @fedCreds
 
-                    Write-Verbose "Output secrets now..."
+                    New-AzADAppFederatedCredential @federatedCredentialParams -ErrorAction Stop | Out-Null
 
-                    $appId = $sp.AppId
-                    $subId = (Get-AzContext).Subscription.Id
-                    $tenantId = (Get-AzContext).Tenant.Id
-
-                    Write-Output "AZURE_CLIENT_ID: $appId"
-                    Write-Output "AZURE_SUBSCRIPTION_ID: $subId"
-                    Write-Output "AZURE_TENANT_ID: $tenantId"
-
+                    Write-Verbose "Outputting secrets..."
+                    $secrets = [PSCustomObject]@{
+                        AZURE_CLIENT_ID        = $application.AppId
+                        AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
+                        AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
+                    }
                 }
-                Secret {
-                    
-                    Write-Verbose "Output secrets now..."
 
-                    $appId = $sp.AppId
-                    $subId = (Get-AzContext).Subscription.Id
-                    $tenantId = (Get-AzContext).Tenant.Id
-                    $secret = $sp.PasswordCredentials.SecretText
-
-                    Write-Output "-------------------------------"
-                    Write-Output "AZURE_CLIENT_ID: $appId"
-                    Write-Output "AZURE_SUBSCRIPTION_ID: $subId"
-                    Write-Output "AZURE_TENANT_ID: $tenantId"
-                    Write-Output "AZURE_CLIENT_SECRET: $secret"
-                    Write-Output "-------------------------------"
-
+                'Secret' {
+                    Write-Verbose "Retrieving and outputting secrets..."
+                    $secrets = [PSCustomObject]@{
+                        AZURE_CLIENT_ID        = $application.AppId
+                        AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
+                        AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
+                        AZURE_CLIENT_SECRET    = $servicePrincipal.PasswordCredentials.SecretText
+                    }
                 }
             }
+
+            return $secrets
         }
         catch {
-            Write-Error "An error occurred creating the application: $_"
+            Write-Error "An error occurred during the process: $_"
+            return
         }
     }
 
