@@ -7,7 +7,7 @@
     Copyright         = '(c) Marco Platzer. All rights reserved.'
     Description       = 'A PowerShell module for managing and monitoring Microsoft Azure environments.'
     PowerShellVersion = '7.1'
-    FunctionsToExport = 'Connect-CloudServices'
+    FunctionsToExport = 'Connect-CloudServices', 'New-ServicePrincipal'
     CmdletsToExport   = '*'
     VariablesToExport = '*'
     AliasesToExport   = '*'
