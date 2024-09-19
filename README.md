@@ -4,36 +4,21 @@
 
 ## Features
 - `Connect-CloudServices`: Establish a connection to Azure services.
-- `Get-AzureResourceSummary`: Fetch a summary of Azure resources.
-- `Invoke-AzureFunction`: Trigger an Azure Function.
-- `New-AzureResource`: Create an Azure resource (VM, storage account, etc.).
-- `Get-AzureCostAnalysis`: Get cost details of Azure resources.
-- `Backup-AzureStorage`: Backup data from Azure Storage Accounts to another location.
-- `Set-AzureResourceTag`: Add or update tags for an Azure resource.
-- `Get-AzureVMHealthCheck`: Perform a health check on an Azure Virtual Machine.
+- `New-ServicePrincipal`: Create service principals and assign roles and permissions.
 
 ## Installation
 
-To install this module from the PowerShell Gallery:
-
-```PowerShell
-Install-Module -Name LSEMgmtAzure -Repository PSGallery
-```
+To install this module you have to clone the repository and import the module. The module gets publish into a private registry at the moment.
 
 ## Usage
 Here are some usage examples:
 
-#### Connect to Azure cloud services
+#### Connect to Azure cloud services and optionally update the dependencies
 ```PowerShell
-Connect-CloudServices -Service "Azure"
+Connect-CloudServices -Service Az
 ```
 
-#### Get a summary of all Azure resources
+#### Easily create service principals and assign roles and permissions
 ```PowerShell
-Get-AzureResourceSummary -SubscriptionId "<YourSubscriptionId>"
-```
-
-#### Create an Azure resource
-```PowerShell
-New-AzureResource -ResourceType "VM" -Name "MyVM" -Location "EastUS" -Size "Standard_DS1_v2"
+New-ServicePrincipal -Type "Secret" -DisplayName "MyApp" -Role "Contributor" -Scope "/subscriptions/XXXX"
 ```
