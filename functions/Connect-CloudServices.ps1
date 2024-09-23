@@ -95,7 +95,7 @@ function Connect-CloudServices {
             Write-Verbose "Processing the input parameters for service: $Service"
     
             switch ($Service) {
-                Azure { 
+                Az {
                     Connect-AzAccount -ErrorAction Stop
                 }
                 ExchangeOnlineManagement {
