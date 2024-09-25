@@ -71,7 +71,7 @@ function Connect-CloudServices {
 
         if ($Update) {
             switch ($Service) {
-                Azure {
+                Az {
                     Initialize-Module -ModuleName $Service -Update:$Update
                 }
                 ExchangeOnlineManagement {
