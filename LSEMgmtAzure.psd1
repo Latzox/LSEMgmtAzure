@@ -1,6 +1,6 @@
 @{
     RootModule        = 'LSEMgmtAzure.psm1'
-    ModuleVersion     = '1.0.0'
+    ModuleVersion     = '1.0.1'
     GUID              = '0dfcbdae-7100-49b8-b935-38035fa17962'
     Author            = 'Marco Platzer'
     CompanyName       = 'SWISSPERFORM'
