@@ -32,15 +32,19 @@ jobs:
                 AllowPrerelease = $true
             }
             Install-Module @InstallArgs
-
+            
         - name: Register PSResourceRepository
-          shell: pwsh
-          run: |
-            Register-PSResourceRepository -Name ${{ vars.PS_REPO_NAME }} -Uri ${{ vars.PS_REPO_URL }} -Trusted:$True
-            Get-PSResourceRepository
+          uses: azure/powershell@v2
+          with:
+            inlineScript: |
+              Register-PSResourceRepository -Name ${{ vars.PS_REPO_NAME }} -Uri ${{ vars.PS_REPO_URL }} -Trusted:$True
+              Get-PSResourceRepository
+            azPSVersion: "latest"
 
         - name: Publish PowerShell Module
-          shell: pwsh
-          run: |
-            Get-AzResource -Name latzopwsh -ResourceGroupName rg-pwshrepo-prod-001
-            Publish-PSResource -Path . -Repository ${{ vars.PS_REPO_NAME }} -Verbose
+          uses: azure/powershell@v2
+          with:
+            inlineScript: |
+                Get-AzResource -Name latzopwsh -ResourceGroupName rg-pwshrepo-prod-001
+                Publish-PSResource -Path . -Repository ${{ vars.PS_REPO_NAME }} -Verbose
+            azPSVersion: "latest"
