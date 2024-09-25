@@ -35,7 +35,7 @@ jobs:
         - name: Register PSResourceRepository
           shell: pwsh
           run: |
-            Register-PSResourceRepository -Name ${{ vars.PS_REPO_NAME }} -Uri ${{ vars.PS_REPO_URL }} -InstallationPolicy Trusted
+            Register-PSResourceRepository -Name ${{ vars.PS_REPO_NAME }} -Uri ${{ vars.PS_REPO_URL }} -Trusted:$True
 
         - name: Publish PowerShell Module
           shell: pwsh
