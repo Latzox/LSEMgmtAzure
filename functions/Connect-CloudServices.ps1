@@ -22,9 +22,9 @@ function Connect-CloudServices {
     Connect-CloudServices -Service "Azure"
 
     .NOTES
-    Author: Marco Platzer
-    Version: 1.0.0
-    Date: 18-09-2024
+    Author: https://github.com/Latzox
+    Version: 1.0.1
+    Date: 25-09-2024
 
     #>
 
@@ -71,7 +71,7 @@ function Connect-CloudServices {
 
         if ($Update) {
             switch ($Service) {
-                Azure {
+                Az {
                     Initialize-Module -ModuleName $Service -Update:$Update
                 }
                 ExchangeOnlineManagement {
@@ -95,7 +95,7 @@ function Connect-CloudServices {
             Write-Verbose "Processing the input parameters for service: $Service"
     
             switch ($Service) {
-                Azure { 
+                Az {
                     Connect-AzAccount -ErrorAction Stop
                 }
                 ExchangeOnlineManagement {
