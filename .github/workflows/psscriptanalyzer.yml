@@ -1,0 +1,22 @@
+name: PSScriptAnalyzer
+
+run-name: >
+  ${{ github.workflow }}: ${{ github.event_name }} for ${{ github.ref_name }} by @${{ github.actor }}
+
+on:
+    push:
+        branches:
+            - '**'
+
+jobs:
+    Analyze:
+        runs-on: windows-latest
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Run PSScriptAnalyzer
+          shell: pwsh
+          run: | 
+            Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
