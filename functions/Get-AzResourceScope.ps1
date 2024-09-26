@@ -1,49 +1,61 @@
 function Get-AzResourceScope {
     <#
     .SYNOPSIS
-    A brief description of what the function does.
+    Retrieves the scope of an Azure resource, resource group, or subscription.
 
     .DESCRIPTION
-    A detailed explanation of the function’s purpose and how it works.
+    This function retrieves the scope (resource ID) of an Azure resource, resource group, or subscription, 
+    depending on the specified type. It requires an established connection to Azure.
 
-    .PARAMETER Param1
-    Description of the first parameter.
+    .PARAMETER Type
+    Specifies the scope type: "Resource", "ResourceGroup", or "Subscription".
 
-    .PARAMETER Param2
-    Description of the second parameter.
+    .PARAMETER Name
+    The name of the Azure resource. Mandatory for "Resource" type.
+
+    .PARAMETER ResourceGroup
+    The name of the resource group. Mandatory for "Resource" and "ResourceGroup" types.
 
     .INPUTS
-    If applicable, describe the types of objects that can be piped into this function.
+    None. You cannot pipe input into this function.
 
     .OUTPUTS
-    Describe the types of objects that the function returns.
+    System.String. The resource ID of the specified resource, resource group, or subscription.
 
     .EXAMPLE
-    Example usage of the function with an explanation of what it does.
-    PS> Get-SampleFunction -Param1 "Value1" -Param2 "Value2"
+    Retrieve the resource ID of a specific resource:
+    PS> Get-AzResourceScope -Type "Resource" -Name "MyResource" -ResourceGroup "MyResourceGroup"
+
+    .EXAMPLE
+    Retrieve the resource ID of a specific resource group:
+    PS> Get-AzResourceScope -Type "ResourceGroup" -Name "MyResourceGroup"
+
+    .EXAMPLE
+    Retrieve the subscription ID:
+    PS> Get-AzResourceScope -Type "Subscription"
 
     .NOTES
-    Additional information such as author, version, and any other notes.
+    Author: https://github.com/Latzox
+    Version: 1.0.0
 
     .LINK
-    Link to documentation or related functions if applicable.
+    https://github.com/Latzox/LSEMgmtAzure
+
     #>
 
-    [CmdletBinding(DefaultParameterSetName = 'ResourceSet')]
+    [CmdletBinding()]
     Param (
-        [Parameter(Mandatory = $true, ParameterSetName = 'ResourceSet')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'SubscriptionSet')]
+        [Parameter(Mandatory = $true)]
         [ValidateSet("Resource", "ResourceGroup", "Subscription")]
         [string]$Type,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ResourceSet')]
-        [Parameter(Mandatory = $true, ParameterSetName = 'SubscriptionSet')]
-        [ValidateNotNullOrEmpty()]
+        [Parameter(Mandatory = $false)]
+        #[ValidateNotNullOrEmpty()]
         [string]$Name,
 
-        [Parameter(Mandatory = $true, ParameterSetName = 'ResourceSet')]
+        [Parameter(Mandatory = $false)]
         [ValidateNotNullOrEmpty()]
-        [string]$ResourceGroup
+        [string]$ResourceGroupName
     )
 
     Begin {
@@ -53,36 +65,79 @@ function Get-AzResourceScope {
             Get-AzContext -ErrorAction Stop | Out-Null
         }
         catch {
-            Write-Error "Azure resources not available. Please run Connect-CloudServices to establish a connection with your Azure account."
+            Write-Error "Azure resources not available. Please run Connect-AzAccount to establish a connection with your Azure account."
             return
         }
     }
 
     Process {
         try {
-            Write-Verbose "Start processing."
+            Write-Verbose "Processing based on the selected type: $Type"
 
             switch ($Type) {
                 Resource {
-                    Write-Verbose "Gather resource informations."
-                    $resource = Get-AzResource -Name $Name -ResourceGroupName $ResourceGroup
+                    if (-not $Name -or -not $ResourceGroupName) {
+                        throw "For 'Resource' type, both 'Name' and 'ResourceGroupName' parameters are required."
+                    }
 
-                    Write-Verbose "Creating output."
-                    return $resource.ResourceId
+                    Write-Verbose "Fetching resource information..."
+                    try {
+                        $resource = Get-AzResource -Name $Name -ResourceGroupName $ResourceGroupName -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Error "The resource '$Name' does not exist in the resource group '$ResourceGroupName'."
+                        return
+                    }
+
+                    if (-not $resource) {
+                        Write-Error "The resource '$Name' was not found in the resource group '$ResourceGroupName'."
+                        return
+                    }
+
+                    Write-Verbose "Creating output for the resource."
+                    [PSCustomObject]@{
+                        Type              = 'Resource'
+                        Name              = $Name
+                        ResourceGroupName = $ResourceGroupName
+                        ResourceId        = $resource.ResourceId
+                    }
                 }
                 ResourceGroup {
-                    Write-Verbose "Gather resourcegroup informations."
-                    $resourceGroup = Get-AzResourceGroup -Name $ResourceGroup
+                    if (-not $Name) {
+                        throw "For 'ResourceGroup' type, 'Name' parameter is required."
+                    }
 
-                    Write-Verbose "Creating outputs."
-                    return $resourceGroup.ResourceId
+                    Write-Verbose "Fetching resource group information..."
+                    try {
+                        $resourceGroup = Get-AzResourceGroup -Name $Name -ErrorAction Stop
+                    }
+                    catch {
+                        Write-Error "The resource group '$Name' does not exist."
+                        return
+                    }
+
+                    if (-not $resourceGroup) {
+                        Write-Error "The resource group '$Name' was not found."
+                        return
+                    }
+
+                    Write-Verbose "Creating output for the resource group."
+                    [PSCustomObject]@{
+                        Type              = 'ResourceGroup'
+                        ResourceGroupName = $Name
+                        ResourceId        = $resourceGroup.ResourceId
+                    }
                 }
                 Subscription {
-                    Write-Verbose "Gatering subscription informations."
+                    Write-Verbose "Fetching subscription information..."
                     $subscriptionId = (Get-AzContext).Subscription.Id
 
-                    Write-Verbose "Creating outputs."
-                    return "/subscriptions/$subscriptionId"
+                    Write-Verbose "Creating output for the subscription."
+                    [PSCustomObject]@{
+                        Type           = 'Subscription'
+                        SubscriptionId = $subscriptionId
+                        ResourceId     = "/subscriptions/$subscriptionId"
+                    }
                 }
             }
         }
