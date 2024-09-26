@@ -24,7 +24,9 @@ function Connect-CloudServices {
     .NOTES
     Author: https://github.com/Latzox
     Version: 1.0.1
-    Date: 25-09-2024
+
+    .LINK
+    https://github.com/Latzox/LSEMgmtAzure
 
     #>
 
