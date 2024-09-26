@@ -1,0 +1,29 @@
+name: Publish PowerShell Module
+
+run-name: >
+  ${{ github.workflow }}: ${{ github.event_name }} for ${{ github.ref_name }} by @${{ github.actor }}
+
+on:
+    push:
+        branches:
+            - '**'
+
+jobs:
+    publish:
+        runs-on: windows-latest
+
+        steps:
+        - name: Checkout repository
+          uses: actions/checkout@v4
+
+        - name: Run PSScriptAnalyzer
+          uses: microsoft/psscriptanalyzer-action@v1.0
+          with:
+           path: .\
+           recurse: true 
+           output: results.sarif
+        
+        - name: Upload SARIF results file
+          uses: github/codeql-action/upload-sarif@v1
+          with:
+            sarif_file: results.sarif
