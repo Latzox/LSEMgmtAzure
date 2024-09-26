@@ -29,7 +29,7 @@ function New-ServicePrincipal {
     PS> New-ServicePrincipal -Type "Secret" -DisplayName "MyApp" -Role "Contributor" -Scope "/subscriptions/XXXX"
 
     .NOTES
-    Author: Marco Platzer
+    Author: https://github.com/Latzox
     Version: 1.0.0
 
     .LINK
