@@ -37,7 +37,7 @@ function New-ServicePrincipal {
 
     #>
 
-    [CmdletBinding()]
+    [CmdletBinding(SupportsShouldProcess=$true)]
     Param (
         [Parameter(Mandatory = $true, Position = 0)]
         [ValidateSet("Secret", "FederatedCredential")]
@@ -69,53 +69,55 @@ function New-ServicePrincipal {
     }
 
     Process {
-        Write-Verbose "Starting to process..."
-        try {
-            Write-Verbose "Creating the Azure AD Service Principal..."
-            $servicePrincipal = New-AzADServicePrincipal -DisplayName $DisplayName -Role $Role -Scope $Scope -ErrorAction Stop
-            $application = Get-AzADApplication -ApplicationId $servicePrincipal.AppId -ErrorAction Stop
+        if ($PSCmdlet.ShouldProcess("Creating Service Principal with DisplayName '$DisplayName' on Resource '$Scope' with '$Role' Role.")) {
+            Write-Verbose "Starting to process..."
+            try {
+                Write-Verbose "Creating the Azure AD Service Principal..."
+                $servicePrincipal = New-AzADServicePrincipal -DisplayName $DisplayName -Role $Role -Scope $Scope -ErrorAction Stop
+                $application = Get-AzADApplication -ApplicationId $servicePrincipal.AppId -ErrorAction Stop
 
-            switch ($Type) {
-                'FederatedCredential' {
-                    Write-Verbose "Creating federated credentials for GitHub workflows..."
-                    $org = Read-Host -Prompt "Enter the GitHub org name"
-                    $repo = Read-Host -Prompt "Enter the GitHub repo name"
-                    $env = Read-Host -Prompt "Enter the environment name (e.g. production, public)"
+                switch ($Type) {
+                    'FederatedCredential' {
+                        Write-Verbose "Creating federated credentials for GitHub workflows..."
+                        $org = Read-Host -Prompt "Enter the GitHub org name"
+                        $repo = Read-Host -Prompt "Enter the GitHub repo name"
+                        $env = Read-Host -Prompt "Enter the environment name (e.g. production, public)"
 
-                    $federatedCredentialParams = @{
-                        ApplicationObjectId = $application.Id
-                        Audience            = "api://AzureADTokenExchange"
-                        Issuer              = "https://token.actions.githubusercontent.com/"
-                        Name                = "OIDC"
-                        Subject             = "repo:$org/${repo}:environment:$env"
+                        $federatedCredentialParams = @{
+                            ApplicationObjectId = $application.Id
+                            Audience            = "api://AzureADTokenExchange"
+                            Issuer              = "https://token.actions.githubusercontent.com/"
+                            Name                = "OIDC"
+                            Subject             = "repo:$org/${repo}:environment:$env"
+                        }
+
+                        New-AzADAppFederatedCredential @federatedCredentialParams -ErrorAction Stop | Out-Null
+
+                        Write-Verbose "Outputting secrets..."
+                        $secrets = [PSCustomObject]@{
+                            AZURE_CLIENT_ID        = $application.AppId
+                            AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
+                            AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
+                        }
                     }
 
-                    New-AzADAppFederatedCredential @federatedCredentialParams -ErrorAction Stop | Out-Null
-
-                    Write-Verbose "Outputting secrets..."
-                    $secrets = [PSCustomObject]@{
-                        AZURE_CLIENT_ID        = $application.AppId
-                        AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
-                        AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
+                    'Secret' {
+                        Write-Verbose "Retrieving and outputting secrets..."
+                        $secrets = [PSCustomObject]@{
+                            AZURE_CLIENT_ID        = $application.AppId
+                            AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
+                            AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
+                            AZURE_CLIENT_SECRET    = $servicePrincipal.PasswordCredentials.SecretText
+                        }
                     }
                 }
 
-                'Secret' {
-                    Write-Verbose "Retrieving and outputting secrets..."
-                    $secrets = [PSCustomObject]@{
-                        AZURE_CLIENT_ID        = $application.AppId
-                        AZURE_SUBSCRIPTION_ID  = (Get-AzContext).Subscription.Id
-                        AZURE_TENANT_ID        = (Get-AzContext).Tenant.Id
-                        AZURE_CLIENT_SECRET    = $servicePrincipal.PasswordCredentials.SecretText
-                    }
-                }
+                return $secrets | Format-List
             }
-
-            return $secrets
-        }
-        catch {
-            Write-Error "An error occurred during the process: $_"
-            return
+            catch {
+                Write-Error "An error occurred during the process: $_"
+                return
+            }
         }
     }
 
