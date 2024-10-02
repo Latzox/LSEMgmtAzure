@@ -8,9 +8,9 @@
     Description       = 'A PowerShell module for managing and monitoring Microsoft Azure environments.'
     PowerShellVersion = '7.1'
     FunctionsToExport = 'Connect-CloudService', 'New-ServicePrincipal', 'Get-AzResourceScope'
-    CmdletsToExport   = '*'
-    VariablesToExport = '*'
-    AliasesToExport   = '*'
+    CmdletsToExport   = @()
+    VariablesToExport = @()
+    AliasesToExport   = @()
     PrivateData       = @{
         PSData = @{
             Tags = 'Azure', 'Cloud Management', 'PowerShell', 'Automation'
