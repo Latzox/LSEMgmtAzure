@@ -1,4 +1,4 @@
-function Connect-CloudServices {
+function Connect-CloudService {
     <#
     .SYNOPSIS
     Authenticates and connects to specified cloud services.
@@ -19,7 +19,7 @@ function Connect-CloudServices {
     None. This function does not return output; it writes to a file or displays messages in the console.
 
     .EXAMPLE
-    Connect-CloudServices -Service "Azure"
+    Connect-CloudService -Service "Azure"
 
     .NOTES
     Author: https://github.com/Latzox
@@ -48,10 +48,10 @@ function Connect-CloudServices {
                 [string]$ModuleName,
                 [switch]$Update
             )
-        
+
             $module = Get-InstalledModule -Name $ModuleName -ErrorAction SilentlyContinue
             $loaded = Get-Module -Name $ModuleName -ListAvailable -ErrorAction SilentlyContinue
-        
+
             if ($Update -and $module) {
                 Write-Verbose "Updating module $ModuleName..."
                 Update-Module -Name $ModuleName -Confirm:$false -Force
@@ -62,7 +62,7 @@ function Connect-CloudServices {
             } else {
                 Write-Verbose "Module $ModuleName is already installed."
             }
-        
+
             if (-not $loaded) {
                 Write-Verbose "Importing module $ModuleName..."
                 Import-Module -Name $ModuleName -Force
@@ -87,7 +87,7 @@ function Connect-CloudServices {
                 }
                 MicrosoftTeams {
                     Initialize-Module -ModuleName $Service -Update:$Update
-                } 
+                }
             }
         }
     }
@@ -95,7 +95,7 @@ function Connect-CloudServices {
     Process {
         try {
             Write-Verbose "Processing the input parameters for service: $Service"
-    
+
             switch ($Service) {
                 Az {
                     Connect-AzAccount -ErrorAction Stop
@@ -114,7 +114,7 @@ function Connect-CloudServices {
                     Connect-MicrosoftTeams -ErrorAction Stop
                 }
             }
-    
+
         }
         catch {
             Write-Error "Failed to connect to $Service. Error details: $_"

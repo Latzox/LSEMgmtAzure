@@ -3,7 +3,7 @@
 **LSEMgmtAzure** is a PowerShell module to manage and monitor Microsoft Azure environments, providing functionality for resource management, cost analysis, and backup operations.
 
 ## Features
-- `Connect-CloudServices`: Establish a connection to Azure services.
+- `Connect-CloudService`: Establish a connection to Azure services.
 - `New-ServicePrincipal`: Create service principals and assign roles and permissions.
 - `Get-AzResourceScope`: Get the resource scope of any resource, resource group or subscription.
 
@@ -16,8 +16,8 @@ Here are some usage examples:
 
 #### Connect to cloud services and optionally update the dependencies
 ```PowerShell
-Connect-CloudServices -Service Az
-Connect-CloudServices -Service ExchangeOnlineManagement -Update
+Connect-CloudService -Service Az
+Connect-CloudService -Service ExchangeOnlineManagement -Update
 ```
 
 #### Easily create service principals and assign roles and permissions

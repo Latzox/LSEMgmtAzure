@@ -19,4 +19,5 @@ jobs:
         - name: Run PSScriptAnalyzer
           shell: pwsh
           run: | 
-            Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
+            $report = Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
+            $report | Out-String | Set-Content -Path $env:GITHUB_STEP_SUMMARY
