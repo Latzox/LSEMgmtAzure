@@ -1,4 +1,4 @@
-function Connect-CloudServices {
+function Connect-CloudService {
     <#
     .SYNOPSIS
     Authenticates and connects to specified cloud services.
@@ -19,7 +19,7 @@ function Connect-CloudServices {
     None. This function does not return output; it writes to a file or displays messages in the console.
 
     .EXAMPLE
-    Connect-CloudServices -Service "Azure"
+    Connect-CloudService -Service "Azure"
 
     .NOTES
     Author: https://github.com/Latzox
