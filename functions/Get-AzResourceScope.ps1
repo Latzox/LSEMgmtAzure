@@ -4,7 +4,7 @@ function Get-AzResourceScope {
     Retrieves the scope of an Azure resource, resource group, or subscription.
 
     .DESCRIPTION
-    This function retrieves the scope (resource ID) of an Azure resource, resource group, or subscription, 
+    This function retrieves the scope (resource ID) of an Azure resource, resource group, or subscription,
     depending on the specified type. It requires an established connection to Azure.
 
     .PARAMETER Type
