@@ -82,19 +82,25 @@ function Connect-CloudService {
 
             switch ($Service) {
                 Az {
+                    Write-Vebrose "Clearing existing Azure credentials and context and connecting to Azure..."
+                    Disconnect-AzAccount -ErrorAction Stop
                     Connect-AzAccount -ErrorAction Stop
                 }
                 ExchangeOnlineManagement {
+                    Write-Verbose "Connecting to Exchange Online..."
                     Connect-ExchangeOnline -ErrorAction Stop
                 }
                 Microsoft.Graph {
+                    Write-Verbose "Connecting to Microsoft Graph..."
                     Connect-MgGraph -ErrorAction Stop
                 }
                 Microsoft.Online.SharePoint.PowerShell {
+                    Write-Verbose "Connecting to SharePoint Online..."
                     $url = Read-Host -Prompt "Enter the URL of your SharePoint Online Service (e.g., https://org-admin.sharepoint.com):"
                     Connect-SPOService -Url $url -ErrorAction Stop
                 }
                 MicrosoftTeams {
+                    Write-Verbose "Connecting to Microsoft Teams..."
                     Connect-MicrosoftTeams -ErrorAction Stop
                 }
             }
