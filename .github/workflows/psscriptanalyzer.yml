@@ -20,4 +20,14 @@ jobs:
           shell: pwsh
           run: | 
             $report = Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
-            $report | Out-String | Set-Content -Path $env:GITHUB_STEP_SUMMARY
+            if ($report.Count -eq 0) {
+                $markdownReport = "### No issues found :white_check_mark:"
+            } else {
+                $markdownReport = "### PSScriptAnalyzer Report :warning:`n"
+                $markdownReport += "| RuleName | Severity | Line | Message |`n"
+                $markdownReport += "| --- | --- | --- | --- |`n"
+                foreach ($item in $report) {
+                    $markdownReport += "| $($item.RuleName) | $($item.Severity) | $($item.Line) | $($item.Message) |`n"
+                }
+            }
+            $markdownReport | Out-String | Set-Content -Path $env:GITHUB_STEP_SUMMARY
