@@ -72,23 +72,7 @@ function Connect-CloudService {
         }
 
         if ($Update) {
-            switch ($Service) {
-                Az {
-                    Initialize-Module -ModuleName $Service -Update:$Update
-                }
-                ExchangeOnlineManagement {
-                    Initialize-Module -ModuleName $Service -Update:$Update
-                }
-                Microsoft.Graph {
-                    Initialize-Module -ModuleName $Service -Update:$Update
-                }
-                Microsoft.Online.SharePoint.PowerShell {
-                    Initialize-Module -ModuleName $Service -Update:$Update
-                }
-                MicrosoftTeams {
-                    Initialize-Module -ModuleName $Service -Update:$Update
-                }
-            }
+            Initialize-Module -ModuleName $Service -Update:$Update
         }
     }
 
