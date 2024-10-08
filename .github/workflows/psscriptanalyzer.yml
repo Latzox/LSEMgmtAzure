@@ -20,4 +20,10 @@ jobs:
           shell: pwsh
           run: | 
             $report = Invoke-ScriptAnalyzer -Path . -Recurse -ReportSummary
-            $report | Out-String | Set-Content -Path $env:GITHUB_STEP_SUMMARY
+            $markdownReport = "### PSScriptAnalyzer Report`n"
+            $markdownReport += "| RuleName | Severity | ScriptName | Line | Message |`n"
+            $markdownReport += "| --- | --- | --- | --- | --- |`n"
+            foreach ($item in $report) {
+                $markdownReport += "| $($item.RuleName) | $($item.Severity) | $($item.ScriptName) | $($item.Line) | $($item.Message) |`n"
+            }
+            $markdownReport | Out-String | Set-Content -Path $env:GITHUB_STEP_SUMMARY
