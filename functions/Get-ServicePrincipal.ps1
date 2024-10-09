@@ -57,7 +57,7 @@ function Get-ServicePrincipal {
                 $hasSecret = $sp.PasswordCredentials.Count -gt 0
                 $hasCertificate = $sp.KeyCredentials.Count -gt 0
                 $hasFederatedCredentials = @(Get-AzADAppFederatedCredential -ApplicationObjectId $sp.Id).Count -gt 0
-                
+
                 if ($hasSecret -or $hasCertificate -or $hasFederatedCredentials) {
                     $sp | Add-Member -MemberType NoteProperty -Name "HasSecret" -Value $hasSecret
                     $sp | Add-Member -MemberType NoteProperty -Name "HasCertificate" -Value $hasCertificate
