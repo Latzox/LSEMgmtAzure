@@ -82,8 +82,8 @@ function Connect-CloudService {
 
             switch ($Service) {
                 Az {
-                    Write-Vebrose "Clearing existing Azure credentials and context and connecting to Azure..."
-                    Disconnect-AzAccount -ErrorAction Stop
+                    Write-Verbose "Clearing existing Azure credentials and context and connecting to Azure..."
+                    Disconnect-AzAccount -ErrorAction SilentlyContinue | Out-Null
                     Connect-AzAccount -ErrorAction Stop
                 }
                 ExchangeOnlineManagement {
